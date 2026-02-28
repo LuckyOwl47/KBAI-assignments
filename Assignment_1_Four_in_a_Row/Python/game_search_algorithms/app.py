@@ -168,4 +168,4 @@ if __name__ == '__main__':
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
 
     board: Board = Board(width, height)
-    start_game(game_n, board, get_players(game_n, depth))
+    start_game(game_n, board, get_players(game_n, depth)) #fdgdfgdfgdfg
