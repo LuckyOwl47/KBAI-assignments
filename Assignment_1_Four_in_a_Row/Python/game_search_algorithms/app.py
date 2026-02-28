@@ -124,7 +124,7 @@ def winning(state: np.ndarray, game_n: int) -> int:
     return 0 # Game is not over 
     
 
-def get_players(game_n: int) -> List[PlayerController]:
+def get_players(game_n: int, depth: int) -> List[PlayerController]:
     """Gets the two players
 
     Args:
@@ -141,12 +141,9 @@ def get_players(game_n: int) -> List[PlayerController]:
     # human1: PlayerController = HumanPlayer(1, game_n, heuristic1)
     heuristic1: Heuristic = SimpleHeuristic(game_n)
     heuristic2: Heuristic = SimpleHeuristic(game_n)
-    heuristic3: Heuristic = SimpleHeuristic(game_n)
 
-    # if we want more players
-    # heuristic3: Heuristic = SimpleHeuristic(game_n)
-    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
-    min_max: PlayerController = MinMaxPlayer(2, game_n, depth=3, heuristic=heuristic2)
+    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=depth, heuristic=heuristic1)
+    min_max: PlayerController = MinMaxPlayer(player_id=2, game_n=game_n, depth=depth, heuristic=heuristic2)
     
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
@@ -163,6 +160,7 @@ def get_players(game_n: int) -> List[PlayerController]:
 
 if __name__ == '__main__':
     game_n: int = 4 # n in a row required to win
+    depth: int = 4 # added depth parameter
     width: int = 7  # width of the board
     height: int = 6 # height of the board
 
@@ -170,4 +168,4 @@ if __name__ == '__main__':
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
 
     board: Board = Board(width, height)
-    start_game(game_n, board, get_players(game_n))
+    start_game(game_n, board, get_players(game_n, depth))
