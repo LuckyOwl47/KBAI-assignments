@@ -134,7 +134,7 @@ class MinMaxPlayer(PlayerController):
         Base-case: if depth is 0, or if the board is in a terminal case, 
                    return the board evaluation of the current board state
 
-        Recursive case for both maximizing and minimizing player:
+        Recursive case:
                      1) Iterate through all valid moves
                      2) Simulate the move to get a new board state for each move
                      3) Recursively call the minimax function on the new board state with depth - 1
