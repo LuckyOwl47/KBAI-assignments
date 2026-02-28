@@ -4,70 +4,44 @@ from board import Board
 from typing import List
 import numpy as np
 from numba import jit
-from heuristics import SimpleHeuristic
-from players import AlphaBetaPlayer
-from time import perf_counter
-
-
 
 
 def start_game(game_n: int, board: Board, players: List[PlayerController]) -> int:
-    """Starting a game and handling the game logic."""
-    print('Start game!')
-    current_player_index: int = 0  # index of the current player
-    winner: int = 0
+    """Starting a game and handling the game logic
 
-    # --- timing accumulators per player id ---
-    p_time = {players[0].player_id: 0.0, players[1].player_id: 0.0}
-    p_moves = {players[0].player_id: 0,   players[1].player_id: 0}
+    Args:
+        game_n (int): n in a row required to win
+        board (Board): board to play on
+        players (List[PlayerController]): players of the game
+
+    Returns:
+        int: id of the winning player, or -1 if the game ends in a draw
+    """
+    print('Start game!')
+    current_player_index: int = 0 # index of the current player in the players list
+    winner: int = 0
 
     # Main game loop
     while winner == 0:
         current_player: PlayerController = players[current_player_index]
-
-        # Time just the decision step
-        t0 = perf_counter()
         move: int = current_player.make_move(board)
-        dt = perf_counter() - t0
 
-        # Accumulate timing stats
-        pid = current_player.player_id
-        p_time[pid] += dt
-        p_moves[pid] += 1
-
-        # Apply the move; if invalid, ask again until valid
         while not board.play(move, current_player.player_id):
             move = current_player.make_move(board)
 
-        # Check game status
+        current_player_index = 1 - current_player_index
         winner = winning(board.get_board_state(), game_n)
 
-        # Swap to the other player
-        current_player_index = 1 - current_player_index
-
-    # --- Post-game reporting ---
+    # Printing out winner, final board and number of evaluations after the game 
     print(board)
 
     if winner < 0:
         print('Game is a draw!')
     else:
-        # Find the winner object to print a nice label
-        winner_player = next(p for p in players if p.player_id == winner)
-        # {winner_player} uses __str__ -> X/O; {winner_player!r} uses __repr__ -> MinMax/AlphaBeta
-        print(f'Player {winner_player!r} won!')
+        print(f'Player {current_player} won!')
 
-    # Eval counts per player
     for p in players:
-        # left: pretty label via __repr__, right: piece on board via __str__
-        print(f'{p!r} (piece {p}) evaluated a boardstate {p.get_eval_count()} times!')
-
-    # Timing summary per player
-    for p in players:
-        pid = p.player_id
-        total = p_time[pid]
-        moves = p_moves[pid]
-        avg_ms = (total / moves) * 1000 if moves else 0.0
-        print(f'{p!r} avg move time: {avg_ms:.2f} ms over {moves} moves (total {total:.3f}s)')
+        print(f'Player {p} evaluated a boardstate {p.get_eval_count()} times!')
 
     return winner
 
@@ -149,26 +123,6 @@ def winning(state: np.ndarray, game_n: int) -> int:
 
     return 0 # Game is not over 
     
-def get_players(game_n: int) -> list[PlayerController]:
-    # unique heuristics per player
-    h1: Heuristic = SimpleHeuristic(game_n)
-    h2: Heuristic = SimpleHeuristic(game_n)
-
-    # pick exactly two players with distinct player_id
-    alpha = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=1, heuristic=h1)
-    mcts  = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=h2, exploration=1.41, time_limit_ms=500)
-
-    players = [alpha, mcts]
-
-    # sanity checks
-    assert players[0].player_id in {1, 2}
-    assert players[1].player_id in {1, 2}
-    assert players[0].player_id != players[1].player_id, 'The players must have an unique player_id'
-    assert players[0].heuristic is not players[1].heuristic, 'The players must have an unique heuristic'
-    assert len(players) == 2
-    return players
-
-
 
 def get_players(game_n: int) -> List[PlayerController]:
     """Gets the two players
@@ -190,16 +144,13 @@ def get_players(game_n: int) -> List[PlayerController]:
     heuristic3: Heuristic = SimpleHeuristic(game_n)
 
     # if we want more players
-    # heuristic4: Heuristic = SimpleHeuristic(game_n)
-
-
-    h = SimpleHeuristic(game_n=4)
+    # heuristic3: Heuristic = SimpleHeuristic(game_n)
     alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
     min_max: PlayerController = MinMaxPlayer(2, game_n, depth=3, heuristic=heuristic2)
-    mcts = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=heuristic3, exploration=1.41)
+    
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
-    players: List[PlayerController] = [alpha_beta, mcts]
+    players: List[PlayerController] = [min_max, alpha_beta]
 
     assert players[0].player_id in {1, 2}, 'The player_id of the first player must be either 1 or 2'
     assert players[1].player_id in {1, 2}, 'The player_id of the second player must be either 1 or 2'
