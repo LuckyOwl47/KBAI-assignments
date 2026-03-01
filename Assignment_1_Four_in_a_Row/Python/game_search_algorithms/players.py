@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from heuristics import Heuristic
     from board import Board
-import copy
-import time
 
 
 
@@ -111,7 +109,7 @@ class MinMaxPlayer(PlayerController):
         # return max_move
 
         best_value = -np.inf # start with negative infinity so all values are larger
-        best_move = 0
+        best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
         opponent = 2 if self.player_id == 1 else 1
 
         for col in range(board.width):
@@ -146,6 +144,7 @@ class MinMaxPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
+        #print(f"{self!r} thinking...") # added print to see if the agent is responding
 
         if depth == 0 or self._has_winner(board):
             self.evaluations += 1 # Counter for how many times it's evaluated the score
@@ -191,7 +190,7 @@ class AlphaBetaPlayer(PlayerController):
         self.depth: int = depth
     
     def __repr__(self) -> str:
-        return f"MinMax (d={self.depth}, h={self.heuristic})"
+        return f"AlphaBeta (d={self.depth}, h={self.heuristic})"
 
 
     def make_move(self, board: Board) -> int:
@@ -203,11 +202,12 @@ class AlphaBetaPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
+        #print(f"{self!r} thinking...") # added print to see if the agent is responding
 
         alpha = -np.inf
         beta = np.inf
         best_value = -np.inf # start with negative infinity so all values are larger
-        best_move = 0
+        best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
         opponent = 2 if self.player_id == 1 else 1
 
         for col in range(board.width):
@@ -218,7 +218,7 @@ class AlphaBetaPlayer(PlayerController):
             if value > best_value:
                 best_value, best_move = value, col
             alpha = max(alpha, best_value)
-
+        print(f"Returning col {best_move}, valid={board.is_valid(best_move)}") # added
         return best_move
     
 

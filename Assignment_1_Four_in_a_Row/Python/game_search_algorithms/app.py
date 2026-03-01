@@ -1,9 +1,10 @@
-from heuristics import Heuristic, SimpleHeuristic
-from players import PlayerController, HumanPlayer, MinMaxPlayer, AlphaBetaPlayer, MonteCarloPlayer
+from heuristics import Heuristic, SimpleHeuristic, SuperDuperHeuristic
+from players import PlayerController, HumanPlayer, MinMaxPlayer, AlphaBetaPlayer
 from board import Board
 from typing import List
 import numpy as np
 from numba import jit
+from time import perf_counter # Added runtime measure
 
 
 def start_game(game_n: int, board: Board, players: List[PlayerController]) -> int:
@@ -21,10 +22,14 @@ def start_game(game_n: int, board: Board, players: List[PlayerController]) -> in
     current_player_index: int = 0 # index of the current player in the players list
     winner: int = 0
 
+    p_time = {players[0].player_id: 0.0, players[1].player_id: 0.0} # Added player runtime variable
+
     # Main game loop
     while winner == 0:
         current_player: PlayerController = players[current_player_index]
+        t0 = perf_counter() # Added counter
         move: int = current_player.make_move(board)
+        p_time[current_player.player_id] += perf_counter() - t0 # added 
 
         while not board.play(move, current_player.player_id):
             move = current_player.make_move(board)
@@ -43,7 +48,8 @@ def start_game(game_n: int, board: Board, players: List[PlayerController]) -> in
     for p in players:
         print(f'Player {p} evaluated a boardstate {p.get_eval_count()} times!')
 
-    return winner
+    for p in players:
+        print(f'Player {p} total move time: {p_time[p.player_id]:.3f}s') # Added a print the runtime
 
 
 @jit(nopython=True, cache=True)
@@ -124,7 +130,7 @@ def winning(state: np.ndarray, game_n: int) -> int:
     return 0 # Game is not over 
     
 
-def get_players(game_n: int, depth: int) -> List[PlayerController]:
+def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[PlayerController]:
     """Gets the two players
 
     Args:
@@ -139,12 +145,12 @@ def get_players(game_n: int, depth: int) -> List[PlayerController]:
     
     ### if a human wants to play, uncomment this ###
     # human1: PlayerController = HumanPlayer(1, game_n, heuristic1)
-    heuristic1: Heuristic = SimpleHeuristic(game_n)
-    heuristic2: Heuristic = SimpleHeuristic(game_n)
+    heuristic1: Heuristic = SuperDuperHeuristic(game_n)
+    heuristic2: Heuristic = SuperDuperHeuristic(game_n)
 
-    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=depth, heuristic=heuristic1)
-    min_max: PlayerController = MinMaxPlayer(player_id=2, game_n=game_n, depth=depth, heuristic=heuristic2)
-    
+    min_max: PlayerController = MinMaxPlayer(player_id=1, game_n=game_n, depth=depth_player_1, heuristic=heuristic2)
+    alpha_beta = AlphaBetaPlayer(player_id=2, game_n=game_n, depth=depth_player_2, heuristic=heuristic1)
+
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
     players: List[PlayerController] = [min_max, alpha_beta]
@@ -160,12 +166,13 @@ def get_players(game_n: int, depth: int) -> List[PlayerController]:
 
 if __name__ == '__main__':
     game_n: int = 4 # n in a row required to win
-    depth: int = 4 # added depth parameter
+    depth_player_1: int = 3 # added depth parameters
+    depth_player_2: int = 3 
     width: int = 7  # width of the board
-    height: int = 6 # height of the board
+    height: int = 7 # height of the board
 
     # Check whether the game_n is possible
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
 
     board: Board = Board(width, height)
-    start_game(game_n, board, get_players(game_n, depth)) #fdgdfgdfgdfg
+    start_game(game_n, board, get_players(game_n, depth_player_1, depth_player_2))
