@@ -108,6 +108,11 @@ class MinMaxPlayer(PlayerController):
 
         # return max_move
 
+        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
+        if np.all(board.get_board_state() == 0):
+            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
+            return np.random.choice(valid_cols)
+
         best_value = -np.inf # start with negative infinity so all values are larger
         best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
         opponent = 2 if self.player_id == 1 else 1
@@ -119,6 +124,8 @@ class MinMaxPlayer(PlayerController):
             value = self.minimax(new_board, self.depth -1, maximizing=False, me=self.player_id, opponent=opponent) #Maximizing false because you're the root, and the next turn will start as the minimizer
             if value > best_value:
                 best_value, best_move = value, col
+
+        print(f"MiniMax returning col {best_move}, valid={board.is_valid(best_move)}") # added to see what column they pick
 
         return best_move
     
@@ -204,6 +211,11 @@ class AlphaBetaPlayer(PlayerController):
         """
         #print(f"{self!r} thinking...") # added print to see if the agent is responding
 
+        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
+        if np.all(board.get_board_state() == 0):
+            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
+            return np.random.choice(valid_cols)
+        
         alpha = -np.inf
         beta = np.inf
         best_value = -np.inf # start with negative infinity so all values are larger
@@ -218,7 +230,9 @@ class AlphaBetaPlayer(PlayerController):
             if value > best_value:
                 best_value, best_move = value, col
             alpha = max(alpha, best_value)
-        print(f"Returning col {best_move}, valid={board.is_valid(best_move)}") # added
+
+        print(f"AlphaBeta returning col {best_move}, valid={board.is_valid(best_move)}") # added to see what column they pick
+        
         return best_move
     
 
