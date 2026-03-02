@@ -4,11 +4,14 @@ from board import Board
 from typing import List
 import numpy as np
 from numba import jit
+<<<<<<<<< Temporary merge branch 1
+from time import perf_counter # Added runtime measure
+=========
 from heuristics import SimpleHeuristic
-from players import AlphaBetaPlayer
 from time import perf_counter
 
 
+>>>>>>>>> Temporary merge branch 2
 
 
 def start_game(game_n: int, board: Board, players: List[PlayerController]) -> int:
@@ -133,6 +136,12 @@ def winning(state: np.ndarray, game_n: int) -> int:
 
     return 0 # Game is not over 
     
+
+def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[PlayerController]:
+=========
+    return 0 # Game is not over '''
+
+'''  
 def get_players(game_n: int) -> list[PlayerController]:
     # unique heuristics per player
     h1: Heuristic = SimpleHeuristic(game_n)
@@ -153,8 +162,9 @@ def get_players(game_n: int) -> list[PlayerController]:
     return players
 
 
-
+'''
 def get_players(game_n: int) -> List[PlayerController]:
+>>>>>>>>> Temporary merge branch 2
     """Gets the two players
 
     Args:
@@ -175,13 +185,20 @@ def get_players(game_n: int) -> List[PlayerController]:
     min_max: PlayerController = MinMaxPlayer(player_id=1, game_n=game_n, depth=depth_player_1, heuristic=heuristic2)
     alpha_beta = AlphaBetaPlayer(player_id=2, game_n=game_n, depth=depth_player_2, heuristic=heuristic1)
 
-    h = SimpleHeuristic(game_n=4)
-    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
-    min_max: PlayerController = MinMaxPlayer(2, game_n, depth=3, heuristic=heuristic2)
-    mcts = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=heuristic3, exploration=1.41)
+<<<<<<<<< Temporary merge branch 1
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
-    players: List[PlayerController] = [alpha_beta, mcts]
+    players: List[PlayerController] = [min_max, alpha_beta]
+=========
+
+    h = SimpleHeuristic(game_n=4)
+    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
+    min_max: PlayerController = MinMaxPlayer(1, game_n, depth=3, heuristic=heuristic2)
+    bot = Bot(player_id=2, game_n=game_n, heuristic=heuristic3)
+    # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
+
+    players: List[PlayerController] = [alpha_beta, bot]
+>>>>>>>>> Temporary merge branch 2
 
     assert players[0].player_id in {1, 2}, 'The player_id of the first player must be either 1 or 2'
     assert players[1].player_id in {1, 2}, 'The player_id of the second player must be either 1 or 2'
@@ -194,8 +211,16 @@ def get_players(game_n: int) -> List[PlayerController]:
 
 if __name__ == '__main__':
     game_n: int = 4 # n in a row required to win
+<<<<<<<<< Temporary merge branch 1
+    depth_player_1: int = 3 # added depth parameters
+    depth_player_2: int = 3 
     width: int = 7  # width of the board
+    height: int = 7 # height of the board
+=========
+    width: int = 7  # width of pthe board
     height: int = 6 # height of the board
+    depth: int = 1 # depth for MinMax and AlphaBeta
+>>>>>>>>> Temporary merge branch 2
 
     # Check whether the game_n is possible
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
