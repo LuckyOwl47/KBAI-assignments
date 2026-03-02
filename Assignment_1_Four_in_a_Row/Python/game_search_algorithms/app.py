@@ -165,9 +165,9 @@ def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[P
 
 
 if __name__ == '__main__':
-    game_n: int = 4 # n in a row required to win
-    depth_player_1: int = 3 # added depth parameters
-    depth_player_2: int = 3 
+    game_n: int = 5 # n in a row required to win
+    depth_player_1: int = 8 # added depth parameters
+    depth_player_2: int = 8 
     width: int = 7  # width of the board
     height: int = 7 # height of the board
 

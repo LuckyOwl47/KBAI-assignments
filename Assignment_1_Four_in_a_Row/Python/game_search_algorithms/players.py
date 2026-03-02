@@ -142,11 +142,6 @@ class MinMaxPlayer(PlayerController):
 
         # return max_move
 
-        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
-        if np.all(board.get_board_state() == 0):
-            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
-            return np.random.choice(valid_cols)
-
         best_value = -np.inf # start with negative infinity so all values are larger
         best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
         opponent = 2 if self.player_id == 1 else 1
@@ -185,7 +180,6 @@ class MinMaxPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
-        #print(f"{self!r} thinking...") # added print to see if the agent is responding
 
         if depth == 0 or self._has_winner(board):
             self.evaluations += 1 # Counter for how many times it's evaluated the score
@@ -243,13 +237,7 @@ class AlphaBetaPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
-        #print(f"{self!r} thinking...") # added print to see if the agent is responding
 
-        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
-        if np.all(board.get_board_state() == 0):
-            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
-            return np.random.choice(valid_cols)
-        
         alpha = -np.inf
         beta = np.inf
         best_value = -np.inf # start with negative infinity so all values are larger
