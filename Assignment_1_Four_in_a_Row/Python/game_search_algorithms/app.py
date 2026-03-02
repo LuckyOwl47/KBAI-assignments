@@ -1,11 +1,10 @@
 from heuristics import Heuristic, SimpleHeuristic
-from players import PlayerController, HumanPlayer, MinMaxPlayer, AlphaBetaPlayer, MonteCarloPlayer
+from players import Bot, PlayerController, HumanPlayer, MinMaxPlayer, AlphaBetaPlayer, MonteCarloPlayer
 from board import Board
 from typing import List
 import numpy as np
 from numba import jit
 from heuristics import SimpleHeuristic
-from players import AlphaBetaPlayer
 from time import perf_counter
 
 
@@ -147,8 +146,9 @@ def winning(state: np.ndarray, game_n: int) -> int:
     if np.all(state[:, 0]):
         return -1 # The board is full, game is a draw
 
-    return 0 # Game is not over 
-    
+    return 0 # Game is not over '''
+
+'''  
 def get_players(game_n: int) -> list[PlayerController]:
     # unique heuristics per player
     h1: Heuristic = SimpleHeuristic(game_n)
@@ -169,7 +169,7 @@ def get_players(game_n: int) -> list[PlayerController]:
     return players
 
 
-
+'''
 def get_players(game_n: int) -> List[PlayerController]:
     """Gets the two players
 
@@ -195,11 +195,11 @@ def get_players(game_n: int) -> List[PlayerController]:
 
     h = SimpleHeuristic(game_n=4)
     alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
-    min_max: PlayerController = MinMaxPlayer(2, game_n, depth=3, heuristic=heuristic2)
-    mcts = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=heuristic3, exploration=1.41)
+    min_max: PlayerController = MinMaxPlayer(1, game_n, depth=3, heuristic=heuristic2)
+    bot = Bot(player_id=2, game_n=game_n, heuristic=heuristic3)
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
-    players: List[PlayerController] = [alpha_beta, mcts]
+    players: List[PlayerController] = [alpha_beta, bot]
 
     assert players[0].player_id in {1, 2}, 'The player_id of the first player must be either 1 or 2'
     assert players[1].player_id in {1, 2}, 'The player_id of the second player must be either 1 or 2'
@@ -212,8 +212,9 @@ def get_players(game_n: int) -> List[PlayerController]:
 
 if __name__ == '__main__':
     game_n: int = 4 # n in a row required to win
-    width: int = 7  # width of the board
+    width: int = 7  # width of pthe board
     height: int = 6 # height of the board
+    depth: int = 1 # depth for MinMax and AlphaBeta
 
     # Check whether the game_n is possible
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
