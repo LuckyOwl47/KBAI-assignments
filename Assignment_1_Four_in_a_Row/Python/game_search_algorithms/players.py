@@ -2,6 +2,8 @@ from __future__ import annotations
 from abc import abstractmethod
 import numpy as np
 from typing import TYPE_CHECKING
+
+from numpy.random import random
 if TYPE_CHECKING:
     from heuristics import Heuristic
     from board import Board
@@ -54,6 +56,38 @@ class PlayerController:
             int: column to play in
         """
         pass
+class Bot(PlayerController):
+    """Class for a bot player using a heuristic
+    Inherits from Playercontroller
+    basically this player just makes random moves
+    """
+    def __init__(self, player_id: int, game_n: int, heuristic: Heuristic) -> None:
+        super().__init__(player_id, game_n, heuristic)
+    
+    def __repr__(self) -> str:
+        return f"Bot (h={self.heuristic})"
+
+
+    def make_move(self, board: Board) -> int:
+        """
+        Args:
+            board (Board): the current board
+
+        Returns:
+            int: column to play in
+        """
+        valid_cols = []
+        for col in range(board.width):
+            if board.is_valid(col):
+                valid_cols.append(col)
+
+        if not valid_cols:
+            # Handle the case where there are no valid moves.
+            # This might mean the game is over or the board is full.
+            # You might want to return None, raise an error, or handle it differently.
+            return None
+
+        return random.choice(valid_cols)
 
 
 class MinMaxPlayer(PlayerController):
