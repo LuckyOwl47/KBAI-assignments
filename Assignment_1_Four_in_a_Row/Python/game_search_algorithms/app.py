@@ -4,7 +4,11 @@ from board import Board
 from typing import List
 import numpy as np
 from numba import jit
-from time import perf_counter # Added runtime measure
+from heuristics import SimpleHeuristic
+from players import AlphaBetaPlayer
+from time import perf_counter
+
+
 
 
 def start_game(game_n: int, board: Board, players: List[PlayerController]) -> int:
@@ -129,8 +133,28 @@ def winning(state: np.ndarray, game_n: int) -> int:
 
     return 0 # Game is not over 
     
+def get_players(game_n: int) -> list[PlayerController]:
+    # unique heuristics per player
+    h1: Heuristic = SimpleHeuristic(game_n)
+    h2: Heuristic = SimpleHeuristic(game_n)
 
-def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[PlayerController]:
+    # pick exactly two players with distinct player_id
+    alpha = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=1, heuristic=h1)
+    mcts  = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=h2, exploration=1.41, time_limit_ms=500)
+
+    players = [alpha, mcts]
+
+    # sanity checks
+    assert players[0].player_id in {1, 2}
+    assert players[1].player_id in {1, 2}
+    assert players[0].player_id != players[1].player_id, 'The players must have an unique player_id'
+    assert players[0].heuristic is not players[1].heuristic, 'The players must have an unique heuristic'
+    assert len(players) == 2
+    return players
+
+
+
+def get_players(game_n: int) -> List[PlayerController]:
     """Gets the two players
 
     Args:
@@ -151,9 +175,13 @@ def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[P
     min_max: PlayerController = MinMaxPlayer(player_id=1, game_n=game_n, depth=depth_player_1, heuristic=heuristic2)
     alpha_beta = AlphaBetaPlayer(player_id=2, game_n=game_n, depth=depth_player_2, heuristic=heuristic1)
 
+    h = SimpleHeuristic(game_n=4)
+    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=4, depth=5, heuristic=heuristic1)
+    min_max: PlayerController = MinMaxPlayer(2, game_n, depth=3, heuristic=heuristic2)
+    mcts = MonteCarloPlayer(player_id=2, game_n=game_n, rollouts=5000, heuristic=heuristic3, exploration=1.41)
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
 
-    players: List[PlayerController] = [min_max, alpha_beta]
+    players: List[PlayerController] = [alpha_beta, mcts]
 
     assert players[0].player_id in {1, 2}, 'The player_id of the first player must be either 1 or 2'
     assert players[1].player_id in {1, 2}, 'The player_id of the second player must be either 1 or 2'
@@ -166,13 +194,12 @@ def get_players(game_n: int, depth_player_1: int, depth_player_2: int) -> List[P
 
 if __name__ == '__main__':
     game_n: int = 4 # n in a row required to win
-    depth_player_1: int = 3 # added depth parameters
-    depth_player_2: int = 3 
     width: int = 7  # width of the board
-    height: int = 7 # height of the board
+    height: int = 6 # height of the board
 
     # Check whether the game_n is possible
     assert 1 < game_n <= min(width, height), 'game_n is not possible'
 
     board: Board = Board(width, height)
+    
     start_game(game_n, board, get_players(game_n, depth_player_1, depth_player_2))

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from heuristics import Heuristic
     from board import Board
+import time 
 
 
 
