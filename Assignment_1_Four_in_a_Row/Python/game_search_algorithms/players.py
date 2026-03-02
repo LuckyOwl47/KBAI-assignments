@@ -2,11 +2,10 @@ from __future__ import annotations
 from abc import abstractmethod
 import numpy as np
 from typing import TYPE_CHECKING
-
-from numpy.random import random
 if TYPE_CHECKING:
     from heuristics import Heuristic
     from board import Board
+import time 
 
 
 
@@ -57,7 +56,10 @@ class PlayerController:
         """
         pass
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ingvar-dun-stuff
 
 class MinMaxPlayer(PlayerController):
     """Class for the minmax player using the minmax algorithm
