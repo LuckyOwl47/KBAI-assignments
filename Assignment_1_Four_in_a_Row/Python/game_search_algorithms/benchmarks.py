@@ -1,10 +1,7 @@
-# benchmarks.py
-# Usage: python benchmarks.py
-
 import numpy as np
 import matplotlib.pyplot as plt
 from time import perf_counter
-from typing import Dict, List
+from typing import Dict
 import sys
 import io
 import warnings
@@ -15,13 +12,36 @@ from players import MinMaxPlayer, AlphaBetaPlayer
 from board import Board
 from app import winning
 
+'''
+This module contains benchmarks comparing MinMax and AlphaBeta on different board sizes,
+'''
+def run_game(game_n: int, width: int, height: int, depth: int) -> Dict:
+    """
+    INPUT: - game_n: the number of pieces in a row needed to win (e.g. 5 for Gomoku)
+           - width, height: dimensions of the board N X N
+           - depth: search depth for both MinMax and AlphaBeta
+    OUTPUT: a dict containing stats about the game.
+            NOTE: Not all stats are used in the current benchmarks, but they were used druing experimentation or for averaging results.
+            
+            Here are the stats we keep track of:
+            - minmax_avg_evals: average evaluations per move for MinMax
+            - minmax_total_evals: total evaluations for MinMax
+            - minmax_avg_time: average time per move for MinMax
+            - minmax_total_time: total time for MinMax
+            - alphabeta_avg_evals: average evaluations per move for AlphaBeta
+            - alphabeta_total_evals: total evaluations for AlphaBeta
+            - alphabeta_avg_time: average time per move for AlphaBeta
+            - alphabeta_total_time: total time for AlphaBeta
+            - total_moves: total moves made in the game
+            - winner: 0 for no winner, 1 for MinMax wins, 2
 
-def run_game(game_n: int, width: int, height: int, depth: int,
-             max_moves: int = 200) -> Dict:
+    This run_game function is identical to the one in app.py, only difference is that 
+    it takes more args (the parameters we want to tweak for benchmarking) and outputs a 
+    dict that is used to plot the graphs and tables in this module. By making a new function, 
+    we can iterate over the different parameters more easily.
     """
-    Play a full game between MinMax (player 1) and AlphaBeta (player 2).
-    Returns per-move average evaluations and runtime for both players.
-    """
+
+    # ESTABLISHING THE PLAYERS
     h1 = SuperDuperHeuristic(game_n)
     h2 = SuperDuperHeuristic(game_n)
 
@@ -35,10 +55,10 @@ def run_game(game_n: int, width: int, height: int, depth: int,
     current_idx = 0 # index of the current player (0 for MinMax, 1 for AlphaBeta)
     winner = 0 # 0 means no winner yet, 1 means MinMax wins, 2 means AlphaBeta wins, -1 means draw
     move_count = {1: 0, 2: 0} # counts of moves made by each player (for calculating averages)
-    time_accum = {1: 0.0, 2: 0.0} #
-    total_moves = 0
+    time_accum = {1: 0.0, 2: 0.0} # Total time for each player (for calculating averages)
+    total_moves = 0 # Total moves in the game (for reporting and sanity checks)
 
-    while winner == 0 and total_moves < max_moves:
+    while winner == 0:
         p = players[current_idx]
         pid = p.player_id
 
@@ -46,7 +66,7 @@ def run_game(game_n: int, width: int, height: int, depth: int,
         sys.stdout = io.StringIO() # Remove print statements from playouts for cleaner output
         t0 = perf_counter()
         move = p.make_move(board)
-        dt = perf_counter() - t0
+        dt = (perf_counter() - t0) * 1000 # convert to milliseconds
         sys.stdout = old_stdout ######
 
         if not board.play(move, pid):
@@ -88,34 +108,37 @@ def plot_ratio_graphs():
     print("=" * 50)
     print("Small board (5x5, game_n=5)")
     print("=" * 50)
+
+    ### LOOP TO PLOT RATIO GRAPHS OVER ALL DEPTHS FOR SMALL BOARD
     for d in depths:
         print(f"  depth={d} ...", end=" ", flush=True)
         res = run_game(game_n=5, width=5, height=5, depth=d)
-        ratio = res['alphabeta_avg_evals'] / res['minmax_avg_evals'] if res['minmax_avg_evals'] > 0 else 0
+        ratio = res['minmax_avg_evals'] / res['alphabeta_avg_evals'] 
         small_ratio.append(ratio)
-        print(f"done  (AB/MM = {ratio:.4f}, moves={res['total_moves']})")
+        print(f"done  (AB/MM = {ratio:.3f}, moves={res['total_moves']})")
 
-    # Big board
     print()
     print("=" * 50)
     print("Big board (10x10, game_n=10)")
     print("=" * 50)
+    
+    ### LOOP TO PLOT RATIO GRAPHS OVER ALL DEPTHS FOR BIG BOARD
+    ### FOR SANITY CHECK (takes long to run)
     for d in depths:
         print(f"  depth={d} ...", end=" ", flush=True)
         res = run_game(game_n=10, width=10, height=10, depth=d)
-        ratio = res['alphabeta_avg_evals'] / res['minmax_avg_evals'] if res['minmax_avg_evals'] > 0 else 0
+        ratio = res['minmax_avg_evals'] / res['alphabeta_avg_evals'] 
         big_ratio.append(ratio)
-        print(f"done  (AB/MM = {ratio:.4f}, moves={res['total_moves']})")
+        print(f"done  (AB/MM = {ratio:.3f}, moves={res['total_moves']})")
 
     print("\nPlotting...\n")
 
     # Plot small board
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(depths, small_ratio, 'o-', color='tab:blue', linewidth=2, markersize=8)
-    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5, label='Ratio = 1 (no improvement)')
-    ax.set_xlabel('Search Depth', fontsize=13)
-    ax.set_ylabel('Evaluation Ratio (AlphaBeta / MinMax)', fontsize=13)
-    ax.set_title('Small Board (5×5, game_n=5)', fontsize=14)
+    ax.set_xlabel('Search depth', fontsize=13)
+    ax.set_ylabel('Evaluation ratio (MinMax / AlphaBeta)', fontsize=13)
+    ax.set_title('Small board (5×5, game_n=5)', fontsize=14)
     ax.set_xticks(depths)
     ax.set_ylim(bottom=0)
     ax.legend(fontsize=11)
@@ -127,9 +150,8 @@ def plot_ratio_graphs():
     # Plot big board
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(depths, big_ratio, 's-', color='tab:orange', linewidth=2, markersize=8)
-    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5, label='Ratio = 1 (no improvement)')
-    ax.set_xlabel('Search Depth', fontsize=13)
-    ax.set_ylabel('Evaluation Ratio (AlphaBeta / MinMax)', fontsize=13)
+    ax.set_xlabel('Search depth', fontsize=13)
+    ax.set_ylabel('Evaluation ratio (MinMax / AlphaBeta)', fontsize=13)
     ax.set_title('Big Board (10×10, game_n=10)', fontsize=14)
     ax.set_xticks(depths)
     ax.set_ylim(bottom=0)
@@ -141,54 +163,7 @@ def plot_ratio_graphs():
 
     print("Ratio plots saved.")
 
-'''
-def print_table():
-    """
-    Prints a table comparing MinMax and AlphaBeta on a 5x5 board
-    at depth=3 for game_n = 3, 4, 5.
-    Shows evaluations per move, runtime per move, and the eval ratio.
-    """
-    table_game_ns = [3, 4, 5]
-    table_depth = 3
-    table_rows = []
 
-    print("=" * 90)
-    print("TABLE: 5×5 board, depth=3, varying game_n")
-    print("=" * 90)
-
-    for gn in table_game_ns:
-        print(f"  Running game_n={gn} ...", end=" ", flush=True)
-        res = run_game(game_n=gn, width=5, height=5, depth=table_depth)
-        table_rows.append(res)
-        print("done")
-
-    print()
-    header = (
-        f"{'game_n':>6} | "
-        f"{'MM Evals/Move':>14} | "
-        f"{'MM Time/Move (ms)':>18} | "
-        f"{'AB Evals/Move':>14} | "
-        f"{'AB Time/Move (ms)':>18} | "
-    )
-    print(header)
-    print("-" * len(header))
-
-    for gn, res in zip(table_game_ns, table_rows):
-        mm_evals = res['minmax_avg_evals']
-        mm_time = res['minmax_avg_time'] * 1000
-        ab_evals = res['alphabeta_avg_evals']
-        ab_time = res['alphabeta_avg_time'] * 1000
-
-        print(
-            f"{gn:>6} | "
-            f"{mm_evals:>14.1f} | "
-            f"{mm_time:>18.2f} | "
-            f"{ab_evals:>14.1f} | "
-            f"{ab_time:>18.2f} | "
-        )
-
-    print()
-''' 
 
 def print_table():
     """
@@ -204,6 +179,7 @@ def print_table():
     print("TABLE: 5×5 board, depth=3, varying game_n (totals per game)")
     print("=" * 100)
 
+    ### LOOP TO RUN GAMES FOR DIFFERENT game_n ON 5X5 BOARD AND COLLECT STATS FOR THE TABLE
     for gn in table_game_ns:
         print(f"  Running game_n={gn} ...", end=" ", flush=True)
         res = run_game(game_n=gn, width=5, height=5, depth=table_depth)
@@ -211,6 +187,7 @@ def print_table():
         print("done")
 
     print()
+
     # good presentation of the stats in a table format
     header = (
         f"{'Win condition':>6} | "
@@ -218,7 +195,7 @@ def print_table():
         f"{'MM Time (ms)':>18} | "
         f"{'AB Total Evals':>15} | "
         f"{'AB Total Time (s)':>18} | "
-        f"{'Ratio (AB/MM)':>14}"
+        f"{'Ratio (MM/AB)':>14}"
     )
     print(header)
     print("-" * len(header))
@@ -228,7 +205,7 @@ def print_table():
         mm_time = res['minmax_total_time']
         ab_evals = res['alphabeta_total_evals']
         ab_time = res['alphabeta_total_time']
-        ratio = ab_evals / mm_evals if mm_evals > 0 else 0
+        ratio = mm_evals / ab_evals
 
         print(
             f"{gn:>6} | "
@@ -236,7 +213,7 @@ def print_table():
             f"{mm_time:>18.3f} | "
             f"{ab_evals:>15} | "
             f"{ab_time:>18.3f} | "
-            f"{ratio:>14.4f}"
+            f"{ratio:>14.3f}"
         )
 
     print()
@@ -244,7 +221,7 @@ def print_table():
 
 
 if __name__ == '__main__':
-    #plot_ratio_graphs()
-    #print()
+    plot_ratio_graphs()
+    print()
     print_table()
     print("Done.")
