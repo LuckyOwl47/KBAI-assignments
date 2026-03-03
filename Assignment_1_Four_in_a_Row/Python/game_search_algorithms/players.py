@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 import time 
 
 
-
 class PlayerController:
     """Abstract class defining a player
     """
@@ -24,7 +23,8 @@ class PlayerController:
         self.heuristic = heuristic
         # added this, love, ingvar
         self.evaluations: int = 0
-
+        # added this, love, Jacob
+        np.random.seed(43) # for repeatable results 
 
     def get_eval_count(self) -> int:
         """
@@ -56,10 +56,6 @@ class PlayerController:
         """
         pass
 
-<<<<<<< HEAD
-
-=======
->>>>>>> ingvar-dun-stuff
 
 class MinMaxPlayer(PlayerController):
     """Class for the minmax player using the minmax algorithm
@@ -89,6 +85,10 @@ class MinMaxPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
+        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
+        if np.all(board.get_board_state() == 0):
+            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
+            return np.random.choice(valid_cols)
 
         # TODO: implement minmax algortihm!
         # HINT: use the functions on the 'board' object to produce a new board given a specific move
@@ -152,6 +152,7 @@ class MinMaxPlayer(PlayerController):
             board (Board): the current board
         """
 
+
         if depth == 0 or self._has_winner(board):
             self.evaluations += 1 # Counter for how many times it's evaluated the score
             return self.heuristic.evaluate_board(me, board)
@@ -208,6 +209,13 @@ class AlphaBetaPlayer(PlayerController):
         Args:
             board (Board): the current board
         """
+
+
+                # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
+        if np.all(board.get_board_state() == 0):
+            valid_cols = [col for col in range(board.width) if board.is_valid(col)]
+            return np.random.choice(valid_cols)
+
 
         alpha = -np.inf
         beta = np.inf
