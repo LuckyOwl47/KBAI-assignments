@@ -17,10 +17,10 @@ This module contains benchmarks comparing MinMax and AlphaBeta on different boar
 '''
 def run_game(game_n: int, width: int, height: int, depth: int) -> Dict:
     """
-    INPUT: - game_n: the number of pieces in a row needed to win (e.g. 5 for Gomoku)
+    Args: - game_n: the number of pieces in a row needed to win (e.g. 5 for Gomoku)
            - width, height: dimensions of the board N X N
            - depth: search depth for both MinMax and AlphaBeta
-    OUTPUT: a dict containing stats about the game.
+    Returns: a dict containing stats about the game.
             NOTE: Not all stats are used in the current benchmarks, but they were used druing experimentation or for averaging results.
             
             Here are the stats we keep track of:
@@ -41,7 +41,7 @@ def run_game(game_n: int, width: int, height: int, depth: int) -> Dict:
     we can iterate over the different parameters more easily.
     """
 
-    # ESTABLISHING THE PLAYERS
+    # Establishing the players
     h1 = SuperDuperHeuristic(game_n)
     h2 = SuperDuperHeuristic(game_n)
 
@@ -67,7 +67,7 @@ def run_game(game_n: int, width: int, height: int, depth: int) -> Dict:
         t0 = perf_counter()
         move = p.make_move(board)
         dt = (perf_counter() - t0) * 1000 # convert to milliseconds
-        sys.stdout = old_stdout ######
+        sys.stdout = old_stdout
 
         if not board.play(move, pid):
             continue
@@ -109,7 +109,7 @@ def plot_ratio_graphs():
     print("Small board (5x5, game_n=5)")
     print("=" * 50)
 
-    ### LOOP TO PLOT RATIO GRAPHS OVER ALL DEPTHS FOR SMALL BOARD
+    # Loop to plot ration graphs over all depths for small board
     for d in depths:
         print(f"  depth={d} ...", end=" ", flush=True)
         res = run_game(game_n=5, width=5, height=5, depth=d)
@@ -122,8 +122,8 @@ def plot_ratio_graphs():
     print("Big board (10x10, game_n=10)")
     print("=" * 50)
     
-    ### LOOP TO PLOT RATIO GRAPHS OVER ALL DEPTHS FOR BIG BOARD
-    ### FOR SANITY CHECK (takes long to run)
+    # loop to plot ratio graphs over all depths for big board
+    # for sanity check (takes long to run)
     for d in depths:
         print(f"  depth={d} ...", end=" ", flush=True)
         res = run_game(game_n=10, width=10, height=10, depth=d)
@@ -179,7 +179,7 @@ def print_table():
     print("TABLE: 5×5 board, depth=3, varying game_n (totals per game)")
     print("=" * 100)
 
-    ### LOOP TO RUN GAMES FOR DIFFERENT game_n ON 5X5 BOARD AND COLLECT STATS FOR THE TABLE
+    # loop to run games for different game_n on 5x5 board and collect stats for the table
     for gn in table_game_ns:
         print(f"  Running game_n={gn} ...", end=" ", flush=True)
         res = run_game(game_n=gn, width=5, height=5, depth=table_depth)

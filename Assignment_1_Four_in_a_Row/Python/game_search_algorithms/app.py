@@ -151,8 +151,8 @@ def get_players(game_n: int) -> List[PlayerController]:
     heuristic1: Heuristic = SuperDuperHeuristic(game_n)
     heuristic2: Heuristic = SuperDuperHeuristic(game_n)
 
-    min_max: PlayerController = MinMaxPlayer(player_id=2, game_n=game_n, depth=depth_player_1, heuristic=heuristic2)
-    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=depth_player_2, heuristic=heuristic1)
+    min_max: PlayerController = MinMaxPlayer(player_id=2, game_n=game_n, depth=depth_player_2, heuristic=heuristic2)
+    alpha_beta = AlphaBetaPlayer(player_id=1, game_n=game_n, depth=depth_player_1, heuristic=heuristic1)
 
 
     # TODO: Implement other PlayerControllers (MinMaxPlayer and AlphaBetaPlayer)
@@ -171,11 +171,11 @@ def get_players(game_n: int) -> List[PlayerController]:
 
 
 if __name__ == '__main__':
-    game_n: int = 3 # n in a row required to win
+    game_n: int = 5 # n in a row required to win
     depth_player_1: int = 3 # added depth parameters
     depth_player_2: int = 3 
-    width: int = 10  # width of the board
-    height: int = 10 # height of the board
+    width: int = 5  # width of the board
+    height: int = 5 # height of the board
 
     board: Board = Board(width, height)
     

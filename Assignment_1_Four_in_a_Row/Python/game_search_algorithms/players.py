@@ -64,7 +64,7 @@ class MinMaxPlayer(PlayerController):
     def __init__(self, player_id: int, game_n: int, depth: int, heuristic: Heuristic) -> None:
         """
         Args:
-            player_id (int): id of a player, can take values 1 or 2 (0 = empty)
+            player_id (int): id of a player, can take values 1 or 2
             game_n (int): n in a row required to win
             depth (int): the max search depth
             heuristic (Heuristic): heuristic used by the player
@@ -77,45 +77,22 @@ class MinMaxPlayer(PlayerController):
 
 
     def make_move(self, board: Board) -> int:
-        """
-        ### DOCSTRING FOR THE MINIMAX ALGORITHM ###
-
-        This function implements the minimax algorithm through recursion. 
+        """This finds the column that has the best move for minimax.
 
         Args:
             board (Board): the current board
+        
+        Returns:
+            int: The column of the best move
         """
         # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
         if np.all(board.get_board_state() == 0):
             valid_cols = [col for col in range(board.width) if board.is_valid(col)]
             return np.random.choice(valid_cols)
 
-        # TODO: implement minmax algortihm!
-        # HINT: use the functions on the 'board' object to produce a new board given a specific move
-        # HINT: use the functions on the 'heuristic' object to produce evaluations for the different board states!
-        
-        # Example:
-        # max_value: float = -np.inf # negative infinity
-        # max_move: int = 0
-        # for col in range(board.width):
-        #     if board.is_valid(col):
-        #         new_board: Board = board.get_new_board(col, self.player_id)
-        #         value: int = self.heuristic.evaluate_board(self.player_id, new_board)
-        #         if value > max_value:
-        #             max_move = col
-
-        # This returns the same as
-        # self.heuristic.get_best_action(self.player_id, board) # Very useful helper function!
-
-        # This is obviously not enough (this is depth 1)
-        # Your assignment is to create a data structure (tree) to store the gameboards such that you can evaluate a higher depths.
-        # Then, use the minmax algorithm to search through this tree to find the best move/action to take!
-
-        # return max_move
-
         best_value = -np.inf # start with negative infinity so all values are larger
-        best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
-        opponent = 2 if self.player_id == 1 else 1
+        best_move = 0 # column of best move
+        opponent = 2 if self.player_id == 1 else 1 # You the opponent is 2 if your Id is 1, otherwise it's 1.
 
         for col in range(board.width):
             if not board.is_valid(col):
@@ -131,27 +108,28 @@ class MinMaxPlayer(PlayerController):
     
 
     def minimax(self, board: Board, depth: int, maximizing: bool, me: int, opponent: int) -> float:
-        """
-        ### DOCSTRING FOR THE MINIMAX ALGORITHM ###
-
-        This function implements the minimax algorithm through recursion. 
+        """This function implements the minimax algorithm through recursion. 
         
         Base-case: if depth is 0, or if the board is in a terminal case, 
                    return the board evaluation of the current board state
 
         Recursive case:
-                     1) Iterate through all valid moves
-                     2) Simulate the move to get a new board state for each move
-                     3) Recursively call the minimax function on the new board state with depth - 1
-                        and switch player
-                     4) It will choose the max value of the children if it's maximizing, and the min value if it's minimizing
-                     5) Returns the best move with the highest/lowest value for each player
+            1) Iterate through all valid moves
+            2) Simulate the move to get a new board state for each move
+            3) Recursively call the minimax function on the new board state with depth - 1 and switch player
+            4) It will choose the max value of the children if it's maximizing, and the min value if it's minimizing
+            5) Returns the best move with the highest/lowest value for each player
 
-        
         Args:
             board (Board): the current board
-        """
+            depth (int): remaining search depth
+            maximizing (bool): True if the current player is maximizing, False if minimizing
+            me (int): the maximizing player's id
+            opponent (int): the minimizing player's id
 
+        Returns 
+            float: minimax's value for the board position
+        """
 
         if depth == 0 or self._has_winner(board):
             self.evaluations += 1 # Counter for how many times it's evaluated the score
@@ -171,13 +149,11 @@ class MinMaxPlayer(PlayerController):
                     new_board = board.get_new_board(col, opponent)
                     best = min(best, self.minimax(new_board, depth - 1, True, me, opponent))
             return best
-        
 
     def _has_winner(self, board: Board) -> bool:
         from app import winning
         result = winning(board.get_board_state(), self.game_n)
         return result in (1,2) #true if someone won, false if they've lsot
-
 
 
 class AlphaBetaPlayer(PlayerController):
@@ -188,7 +164,7 @@ class AlphaBetaPlayer(PlayerController):
     def __init__(self, player_id: int, game_n: int, depth: int, heuristic: Heuristic) -> None:
         """
         Args:
-            player_id (int): id of a player, can take values 1 or 2 (0 = empty)
+            player_id (int): id of a player, can take values 1 or 2
             game_n (int): n in a row required to win
             depth (int): the max search depth
             heuristic (Heuristic): heuristic used by the player
@@ -201,27 +177,25 @@ class AlphaBetaPlayer(PlayerController):
 
 
     def make_move(self, board: Board) -> int:
-        """
-        ### DOCSTRING FOR THE MINIMAX ALGORITHM ###
-
-        This function implements the minimax algorithm through recursion. 
+        """This finds the column that has the best move for AlphaBeta.
 
         Args:
             board (Board): the current board
+
+        Returns:
+            int: The column of the best move
         """
 
-
-                # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
+        # For the first move pick randomly for more random starting conditions (otherwise the game is always identical)
         if np.all(board.get_board_state() == 0):
             valid_cols = [col for col in range(board.width) if board.is_valid(col)]
             return np.random.choice(valid_cols)
 
-
         alpha = -np.inf
         beta = np.inf
         best_value = -np.inf # start with negative infinity so all values are larger
-        best_move = next(col for col in range(board.width) if board.is_valid(col)) # Fixes some weird error when n_game is larger than 5, then it tries to use col 0 over and over even though it's invalid
-        opponent = 2 if self.player_id == 1 else 1
+        best_move = next(col for col in range(board.width) if board.is_valid(col)) # Finds the first valid column. If I use 0 here like in minimax I get some weird error when n_game is 5 or larger, where it tries to use col 0 over and over even though it's invalid
+        opponent = 2 if self.player_id == 1 else 1 # You the opponent is 2 if your Id is 1, otherwise it's 1.
 
         for col in range(board.width):
             if not board.is_valid(col):
@@ -239,10 +213,27 @@ class AlphaBetaPlayer(PlayerController):
 
     def alpha_beta(self, board: Board, depth: int, maximizing: bool, me: int, opponent: int, alpha, beta) -> float:
         """
-        Alpha-Beta
-
+        This function implements the alpha-beta pruning algorithm through recursion.
+        Base-case: if depth is 0, or if the board is in a terminal state,
+                return the board evaluation of the current board state
+        Recursive case:
+            1) Iterate through all valid moves
+            2) Simulate the move to get a new board state for each move
+            3) Recursively call the minimax function on the new board state with depth - 1 and switch player
+            4) It will choose the max value of the children if it's maximizing, and the min value if it's minimizing
+            5) Returns the best move with the highest/lowest value for each player
+            6) If alpha >= beta, prune the remaining branches, they won't affect the final decision
         Args:
             board (Board): the current board
+            depth (int): remaining search depth
+            maximizing (bool): True if the current player is maximizing, False if minimizing
+            me (int): the maximizing player's id
+            opponent (int): the minimizing player's id
+            alpha: the best value the maximizer can guarantee so far
+            beta: the best value the minimizer can guarantee so far
+
+        Returns: 
+            float: AlphaBeta's value for the board position
         """
 
         if depth == 0 or self._has_winner(board):

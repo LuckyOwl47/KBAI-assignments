@@ -104,22 +104,18 @@ class Heuristic:
 
 # Added a new heuristic
 class SuperDuperHeuristic(Heuristic):
-    """An improved heuristic that accounts for both the current player and the opponent.
-    Inherits from Heuristic.
+    """An improved heuristic that considers both players when evaluating a board state.
 
-    Unlike SimpleHeuristic, which only considers the current player's longest consecutive
-    run of pieces, this heuristic evaluates board states by computing the difference between
-    the current player's longest run and the opponent's longest run across all four directions
-    (vertical, horizontal, and both diagonals). This makes the player aware of growing opponent
-    threats even in non-terminal board states, leading to better defensive play at lower search
-    depths compared to SimpleHeuristic.
+    The SimpleHeuristic only looks at how well the current player is doing. this one 
+    also keeps an eye on what the opponent is building. By comparing the longest consecutive
+    run of pieces for each player across all four directions (vertical, horizontal, and both
+    diagonals), it can recognize growing threats earlier and play more defensively at lower
+    search depths.
 
-    The evaluation works as follows:
-        - Terminal states (win/loss/draw) return ±max(width, height) or 0, same as SimpleHeuristic.
-        - For non-terminal states, returns me_in_row - opp_in_row, where:
-            - me_in_row: the longest consecutive run of the current player's pieces
-            - opp_in_row: the longest consecutive run of the opponent's pieces
-        - A positive score means the current player is ahead; negative means the opponent is ahead.
+    How it scores a board:
+        - If the game is over, returns ±max(width, height) for a win/loss, or 0 for a draw.
+        - Otherwise, returns me_in_row - opp_in_row (longest run for current player minus
+            longest run for opponent). Positive means you're ahead; negative means they are.
     """
     def __init__(self, game_n: int) -> None:
         """
@@ -144,12 +140,12 @@ class SuperDuperHeuristic(Heuristic):
         player and the opponent. Returns the difference (me_in_row - opp_in_row), so the score
         is positive when the current player is ahead and negative when the opponent is ahead.
 
-        Terminal states short-circuit the scan:
+        Terminal states terminate the scan:
             - Current player wins: returns max(width, height)
             - Draw: returns 0
             - Opponent wins: returns -max(width, height)
         args:
-            player_id (int): the player for which to compute the heuristic value
+            player_id (int): the current player
             state (np.ndarray): the board to check
             winner (int): 1 or 2 if the respective player won, -1 if the game is a draw, 0 otherwise
 
