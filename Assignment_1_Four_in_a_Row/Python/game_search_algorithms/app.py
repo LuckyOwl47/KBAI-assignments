@@ -174,7 +174,7 @@ if __name__ == '__main__':
     game_n: int = 5 # n in a row required to win
     depth_player_1: int = 3 # added depth parameters
     depth_player_2: int = 3 
-    width: int = 5  # width of the board
+    width: int = 5  # width of the board‰
     height: int = 5 # height of the board
 
     board: Board = Board(width, height)

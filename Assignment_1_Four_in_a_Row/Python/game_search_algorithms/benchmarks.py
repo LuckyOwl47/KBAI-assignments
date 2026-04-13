@@ -100,7 +100,7 @@ def plot_ratio_graphs():
     Plots evaluation ratio (AlphaBeta / MinMax) vs depth (1-7)
     for a small board (5x5, game_n=5) and a big board (10x10, game_n=10).
     """
-    depths = list(range(1, 8))
+    depths = list(range(1, 7)) 
     small_ratio = []
     big_ratio = []
 

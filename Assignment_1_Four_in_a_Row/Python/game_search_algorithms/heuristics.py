@@ -281,7 +281,7 @@ class SimpleHeuristic(Heuristic):
         max_in_row: int = 0
         for i in range(width):
             for j in range(height):
-                if state[i, j] != player_id:
+                if state[i, j] != player_id: # skips any cell that doesn't belong to the current player
                     continue
 
                 max_in_row = max(max_in_row, 1)
