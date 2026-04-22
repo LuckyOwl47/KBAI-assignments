@@ -1,8 +1,11 @@
 import z3
+from __future__ import annotations
 from z3 import *
 from itertools import chain, combinations
 from typing import Tuple, List, Callable
 import re
+
+import z3
 
 
 class ConflictSetRetriever:
@@ -78,7 +81,7 @@ class ConflictSetRetriever:
             raise ValueError("Invalid component connections:\n" + "\n".join(errors))
 
 
-    def extract_in_observations(self) -> List[z3.z3.BoolRef]:
+    def extract_in_observations(self) -> List[ExprRef]: 
         """
         Reads in the in-observations and stores them as list of Z3 Bools.
 
@@ -99,7 +102,7 @@ class ConflictSetRetriever:
             return obs_names
 
 
-    def extract_out_observations(self) -> List[z3.z3.BoolRef]:
+    def extract_out_observations(self) -> List[ExprRef]:
         """
         Reads in the out-observations and stores them as list of Z3 Bools.
 
@@ -121,7 +124,7 @@ class ConflictSetRetriever:
             return obs_names
 
 
-    def extract_gates(self) -> Tuple[List[z3.z3.BoolRef], List[z3.z3.BoolRef]]:
+    def extract_gates(self) -> Tuple[List[ExprRef], List[ExprRef]]:
         """
         Reads in the gate names. Used for both the gates and gate output.
         Discards gate type.
@@ -151,7 +154,7 @@ class ConflictSetRetriever:
 
 
     @staticmethod
-    def faulted(gate_out, logic_expr, fault_flag) -> z3.z3.BoolRef:
+    def faulted(gate_out, logic_expr, fault_flag) -> ExprRef:
         """
         Encode the faulty behaviour of a gate
         (helper function for making fault assumptions)
@@ -232,7 +235,7 @@ class ConflictSetRetriever:
             return (in_a, obs_a), (in_b, obs_b)
         
 
-    def make_fault_assumptions(self) -> List[z3.z3.BoolRef]:
+    def make_fault_assumptions(self) -> List[ExprRef]:
         """
         Function that makes a list of fault assumptions.
 
@@ -265,7 +268,7 @@ class ConflictSetRetriever:
         return fault_assumptions
 
 
-    def extract_observations(self) -> List[z3.z3.BoolRef]:
+    def extract_observations(self) -> List[ExprRef]:
         """
         Extracts both the in- and out-observations, with their truth value.
 
@@ -304,7 +307,7 @@ class ConflictSetRetriever:
 
 
     @staticmethod
-    def powerset(s) -> chain[Tuple[z3.z3.BoolRef]]:
+    def powerset(s) -> chain[Tuple[ExprRef]]:
         """
         Generate a powerset of s, excluding the empty set.
         Used for brute-forcing checking all combinations of gates.

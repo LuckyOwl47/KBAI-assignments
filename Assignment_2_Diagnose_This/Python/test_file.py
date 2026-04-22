@@ -1,8 +1,17 @@
 """
 Benchmark the heuristics in hittingsets.py across all seven circuits.
 
-Produces the numbers used in the results table.
-Run with:  python benchmark_heuristics.py
+Reports per (circuit, heuristic):
+    - number of nodes in the HS-tree
+    - number of hitting sets found
+    - number of minimal hitting sets
+    - wall-clock runtime of the tree construction (averaged over N runs)
+
+The minimal hitting sets must agree across heuristics for every circuit:
+the heuristic only changes HOW the tree is built, not the set of minimal
+hitting sets that fall out of it. The benchmark asserts this.
+
+    Author: Jacob Wamon
 """
 from z3 import *
 import time
@@ -72,7 +81,7 @@ def benchmark_circuit(document):
         total = 0.0
         node_count = hs_count = 0
         minimal = None
-        for _ in range(repeats):
+        for _ in range(repeats): # average over multiple runs to get a more stable timing measurement
             node_count, hs_count, minimal, elapsed = run_once(
                 conflict_sets, heuristic
             )
