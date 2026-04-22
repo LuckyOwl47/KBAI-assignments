@@ -1,4 +1,4 @@
-from collections import deque
+
 
 class HittingSetTreeNode:
     """
@@ -20,7 +20,7 @@ class HittingSetTreeNode:
         return self.label == HittingSetTreeNode.checkmark
 
 
-def run_hitting_set_algorithm(conflict_sets):
+def run_hitting_set_algorithm(conflict_sets, heuristic=None):
     """
     Algorithm that handles conflict sets to hitting sets
 
@@ -30,9 +30,12 @@ def run_hitting_set_algorithm(conflict_sets):
     Returns: 
         tuple: the hitting sets and minimal hitting sets as list of lists
     """
+    if heuristic is None:
+        heuristic = select_conflict_set
+
     conflict_sets = [set(cs) for cs in conflict_sets] # Comprehension that makes the conflict sets into actual sets instead of lists
 
-    tree_root = build_hitting_set_tree(conflict_sets)
+    tree_root = build_hitting_set_tree(conflict_sets, heuristic)
     hitting_sets = collect_hitting_sets(tree_root)
     minimal_hitting_sets = filter_minimal(hitting_sets)
 
@@ -42,20 +45,25 @@ def run_hitting_set_algorithm(conflict_sets):
     )
 
 
-def build_hitting_set_tree(conflict_sets):
+def build_hitting_set_tree(conflict_sets, heuristic=None):
     """
     Constructs the hitting set tree iteratively with a stack like in the slidws
 
     Args: 
         conflict_sets (list of sets): list of conflict sets as sets of component names
+        heuristic (set to none as default) 
     
     Returns: 
         the root node of the constructed tree
     """
+
+    if heuristic is None:
+        heuristic = select_conflict_set
+
     root = HittingSetTreeNode(path_labels=set())  # Calls HittingSetTreeNode with an ampty set to start with an empty accusations list
 
-    stack = deque()  # deque for stacking accusation lists to compare against facts (conflict sets)
-    stack.append(root)  # starting point, no components accused yet
+    stack = []
+    stack.append(root)
 
     while stack:
         node = stack.pop()  # Step 2.1: remove the top node from the stack
@@ -107,7 +115,7 @@ def collect_hitting_sets(root):
     """
     hitting_sets = []
 
-    stack = deque()
+    stack = []
     stack.append(root)
     while stack:
         node = stack.pop()
@@ -132,3 +140,37 @@ def filter_minimal(hitting_sets):
         if not any(other < hs for other in unique):
             minimal.append(set(hs))
     return minimal
+
+def select_conflict_set_most_shared(path_labels, conflict_sets):
+    '''
+    This is our (attempt at) an improved heuristic. It selects the conflict set that shares the most 
+    components with other conflict sets. 
+
+    input: 
+    - path_labels: the set of components already accused on the path to the current node
+    - conflict_sets: the list of all conflict sets as sets of component names
+
+    output:
+    - the conflict set that shares the most components with other conflict sets, 
+        or None if all conflict sets are already hit
+    '''
+    unresolved = [cs for cs in conflict_sets if path_labels.isdisjoint(cs)]
+    if not unresolved:
+        return None
+
+    # Component -> number of unresolved conflict sets containing it.
+    frequency = {}
+    for cs in unresolved:
+        for component in cs:
+            frequency[component] = frequency.get(component, 0) + 1
+
+    # score(CS) counts shared occurrences only, i.e. we subtract the 1 that
+    # comes from CS itself for each of its elements.
+    best_cs = unresolved[0]
+    best_score = -1
+    for cs in unresolved:
+        score = sum(frequency[c] - 1 for c in cs)
+        if score > best_score:
+            best_score = score
+            best_cs = cs
+    return best_cs

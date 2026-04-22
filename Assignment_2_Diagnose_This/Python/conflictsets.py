@@ -1,3 +1,4 @@
+import z3
 from z3 import *
 from itertools import chain, combinations
 from typing import Tuple, List, Callable
