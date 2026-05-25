@@ -1,4 +1,4 @@
-import z3
+
 from __future__ import annotations
 from z3 import *
 from itertools import chain, combinations

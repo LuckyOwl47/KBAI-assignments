@@ -82,7 +82,7 @@ def benchmark_circuit(document):
         node_count = hs_count = 0
         minimal = None
         for _ in range(repeats): # average over multiple runs to get a more stable timing measurement
-            node_count, hs_count, minimal, elapsed = run_once(
+            node_count, hs_count, minimal, elapsed = ,
                 conflict_sets, heuristic
             )
             total += elapsed
