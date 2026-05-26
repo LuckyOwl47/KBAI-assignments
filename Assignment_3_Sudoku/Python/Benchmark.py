@@ -1,3 +1,4 @@
+import heapq
 import time
 import os
 from Sudoku import Sudoku
@@ -6,27 +7,77 @@ from Game import Game
 
 class BenchmarkedGame(Game):
     """
-    Extends Game with counters to measure algorithmic work.
+    Extends Game with counters and a pluggable queue heuristic for AC-3.
+
+    queue_heuristic:
+        "none"       — standard FIFO queue, no ordering
+        "mrv"        — process arcs where xi has the fewest remaining
+                       candidates first (Minimum Remaining Values)
+        "degree"     — process arcs where xi has the most unsolved
+                       neighbours first
+        "finalized"  — prioritise arcs where xj is already finalized;
+                       these are guaranteed to cause a reduction if xi
+                       still contains xj's value
+        "lcv"        — process arcs where xi's domain overlaps most with
+                       xj's values first (most likely to cause a reduction)
     """
 
-    def __init__(self, sudoku):
+    def __init__(self, sudoku, queue_heuristic="none"):
         super().__init__(sudoku)
-        self.arc_revisions   = 0   # total arcs pulled from the queue
-        self.domain_reductions = 0 # total values eliminated from domains
-        self.backtracks      = 0   # total guesses made
+        self.queue_heuristic   = queue_heuristic
+        self.arc_revisions     = 0
+        self.domain_reductions = 0
+        self.backtracks        = 0
+        self._counter          = 0   # unique tiebreaker so Field objects are never compared
+
+    # -------------------------------------------------- queue helpers
+
+    def _priority(self, xi, xj):
+        """Compute the priority for arc (xi, xj). Lower = processed first."""
+        h = self.queue_heuristic
+
+        if h == "mrv":
+            return xi.get_domain_size()
+
+        if h == "degree":
+            deg = sum(1 for n in xi.get_neighbours() if not n.is_finalized())
+            return -deg   # negate so higher degree = lower number = first
+
+        if h == "finalized":
+            return 0 if xj.is_finalized() else 1
+
+        if h == "lcv":
+            xj_vals = ({xj.get_value()} if xj.is_finalized()
+                       else set(xj.get_domain()))
+            overlap = len(set(xi.get_domain()) & xj_vals)
+            return -overlap  # more overlap = more likely to reduce = first
+
+    def _push(self, queue, xi, xj):
+        if self.queue_heuristic == "none":
+            queue.append((xi, xj))
+        else:
+            heapq.heappush(queue, (self._priority(xi, xj), self._counter, xi, xj))
+            self._counter += 1
+
+    def _pop(self, queue):
+        if self.queue_heuristic == "none":
+            return queue.pop(0)
+        _, _, xi, xj = heapq.heappop(queue)
+        return xi, xj
+
+    # ---------------------------------------------------------------- AC-3
 
     def _ac3(self) -> bool:
         board = self.sudoku.get_board()
         queue = []
         for i in range(9):
             for j in range(9):
-                xi = board[i][j]
-                for xj in xi.get_neighbours():
-                    queue.append((xi, xj))
+                for xj in board[i][j].get_neighbours():
+                    self._push(queue, board[i][j], xj)
 
         while queue:
-            xi, xj = queue.pop(0)
-            self.arc_revisions += 1          # count every arc we look at
+            xi, xj = self._pop(queue)
+            self.arc_revisions += 1
             if self._revise(xi, xj):
                 if xi.get_domain_size() == 0 and not xi.is_finalized():
                     return False
@@ -35,7 +86,7 @@ class BenchmarkedGame(Game):
                         if xk.is_finalized() and xk.get_value() == xi.get_value():
                             return False
                 for xk in xi.get_other_neighbours(xj):
-                    queue.append((xk, xi))
+                    self._push(queue, xk, xi)
         return True
 
     def _revise(self, xi, xj) -> bool:
@@ -46,9 +97,12 @@ class BenchmarkedGame(Game):
         for x in list(xi.get_domain()):
             if not any(y != x for y in xj_values):
                 xi.remove_from_domain(x)
-                self.domain_reductions += 1  # count every value eliminated
+                self.domain_reductions += 1
                 revised = True
         return revised
+
+    # -------------------------------------------------------- backtracking
+    # (bonus — uses MRV cell selection, no value ordering)
 
     def _backtrack(self) -> bool:
         board = self.sudoku.get_board()
@@ -63,8 +117,8 @@ class BenchmarkedGame(Game):
         if best is None:
             return True
 
-        for value in list(best.get_domain()):
-            self.backtracks += 1             # count every guess
+        for value in sorted(best.get_domain()):
+            self.backtracks += 1
             state = self._save_state()
 
             best.set_value(value)
@@ -78,39 +132,15 @@ class BenchmarkedGame(Game):
         return False
 
 
-def run_ac3_only(sudoku_path):
-    """Run AC-3 without backtracking and return stats."""
-    g = BenchmarkedGame(Sudoku(sudoku_path))
-    start = time.perf_counter()
-    g._ac3()
-    elapsed = time.perf_counter() - start
+# --------------------------------------------------------------- runner
 
-    board = g.sudoku.get_board()
-    unsolved = sum(1 for i in range(9) for j in range(9)
-                   if not board[i][j].is_finalized())
-    solved = unsolved == 0 and g.valid_solution()
-
-    return {
-        "solved":            solved,
-        "unsolved_cells":    unsolved,
-        "time_ms":           elapsed * 1000,
-        "arc_revisions":     g.arc_revisions,
-        "domain_reductions": g.domain_reductions,
-        "backtracks":        0,
-    }
-
-
-def run_full(sudoku_path):
-    """Run AC-3 + backtracking and return stats."""
-    g = BenchmarkedGame(Sudoku(sudoku_path))
+def run(sudoku_path, queue_h):
+    g     = BenchmarkedGame(Sudoku(sudoku_path), queue_heuristic=queue_h)
     start = time.perf_counter()
     g.solve()
     elapsed = time.perf_counter() - start
-    solved = g.valid_solution()
-
     return {
-        "solved":            solved,
-        "unsolved_cells":    0 if solved else "?",
+        "solved":            g.valid_solution(),
         "time_ms":           elapsed * 1000,
         "arc_revisions":     g.arc_revisions,
         "domain_reductions": g.domain_reductions,
@@ -118,32 +148,42 @@ def run_full(sudoku_path):
     }
 
 
+# ------------------------------------------------------------ benchmark
+
+STRATEGIES = [
+    ("No heuristic",    "none"),
+    ("MRV",             "mrv"),
+    ("Degree",          "degree"),
+    ("Finalized first", "finalized"),
+    ("LCV",             "lcv"),
+]
+
+
 def benchmark():
-    folder = os.path.join(os.path.dirname(__file__), "Sudokus")
+    folder  = os.path.join(os.path.dirname(__file__), "Sudokus")
     puzzles = sorted([f for f in os.listdir(folder) if f.endswith(".txt")])
 
-    print("=" * 72)
-    print(f"{'BENCHMARK RESULTS':^72}")
-    print("=" * 72)
+    hdr = (f"  {'Strategy':<18} {'Solved':<8} {'Time (ms)':<12}"
+           f" {'Arc Revisions':<16} {'Reductions':<14} {'Backtracks'}")
 
-    for mode, runner in [("AC-3 only", run_ac3_only), ("AC-3 + Backtracking", run_full)]:
-        print(f"\n{'─' * 72}")
-        print(f"  {mode}")
-        print(f"{'─' * 72}")
-        print(f"  {'Puzzle':<12} {'Solved':<8} {'Time (ms)':<12} "
-              f"{'Arc Revisions':<16} {'Domain Reductions':<20} {'Backtracks'}")
-        print(f"  {'─'*10} {'─'*6} {'─'*10} {'─'*14} {'─'*18} {'─'*10}")
+    for filename in puzzles:
+        path = os.path.join(folder, filename)
+        name = filename.replace(".txt", "")
 
-        for filename in puzzles:
-            path = os.path.join(folder, filename)
-            stats = runner(path)
-            name  = filename.replace(".txt", "")
-            solved = "✓" if stats["solved"] else "✗"
-            print(f"  {name:<12} {solved:<8} {stats['time_ms']:<12.3f} "
-                  f"{stats['arc_revisions']:<16} {stats['domain_reductions']:<20} "
-                  f"{stats['backtracks']}")
+        print(f"\n{'=' * 82}")
+        print(f"  {name}")
+        print(f"{'=' * 82}")
+        print(hdr)
+        print(f"  {'─'*16} {'─'*6} {'─'*10} {'─'*14} {'─'*12} {'─'*10}")
 
-    print(f"\n{'=' * 72}")
+        for label, queue_h in STRATEGIES:
+            s      = run(path, queue_h)
+            solved = "✓" if s["solved"] else "✗"
+            print(f"  {label:<18} {solved:<8} {s['time_ms']:<12.3f}"
+                  f" {s['arc_revisions']:<16} {s['domain_reductions']:<14}"
+                  f" {s['backtracks']}")
+
+    print(f"\n{'=' * 82}")
 
 
 if __name__ == "__main__":
