@@ -1,7 +1,8 @@
 class Game:
 
-    def __init__(self, sudoku):
+    def __init__(self, sudoku, heuristic = None):
         self.sudoku = sudoku
+        self.heuristic = heuristic
 
     def show_sudoku(self):
         print(self.sudoku)
@@ -10,6 +11,25 @@ class Game:
         if not self._ac3():
             return False
         return self._backtrack()
+
+    ###             HEURISTICS           ###
+    '''Called using args into the class'''
+
+    def _mrv(self, xi, xj):
+        return xi.get_domain_size()
+ 
+    def _degree(self, xi, xj):
+        return -sum(1 for n in xi.get_neighbours() if not n.is_finalized())
+ 
+    def _finalized(self, xi, xj):
+        return 0 if xj.is_finalized() else 1
+ 
+    def _lcv(self, xi, xj):
+        xj_vals = ({xj.get_value()} if xj.is_finalized()
+                   else set(xj.get_domain()))
+        return -len(set(xi.get_domain()) & xj_vals)
+    
+
 
     def _ac3(self) -> bool:
         board = self.sudoku.get_board()
@@ -21,7 +41,14 @@ class Game:
                     queue.append((xi, xj))
 
         while queue:
-            xi, xj = queue.pop(0)
+            if self.heuristic is None:
+                xi, xj = queue.pop(0)
+            else:
+                fn = getattr(self, self.heuristic)
+                best = min(queue, key=lambda arc: fn(*arc))
+                queue.remove(best)
+                xi, xj = best
+
             if self._revise(xi, xj):
                 if xi.get_domain_size() == 0 and not xi.is_finalized():
                     return False
@@ -83,7 +110,7 @@ class Game:
             if self._ac3() and self._backtrack():   # propagate + recurse
                 return True
 
-            self._restore_state(state)      # guess was wrong — undo everything
+            self._restore_state(state)      # guess was wrong, undo everything
 
         return False  # no value worked → contradiction, tell caller to backtrack
 

@@ -11,7 +11,7 @@ class App:
     def solve_sudoku(sudoku_file):
         game = Game(Sudoku(sudoku_file))
         game.show_sudoku()
-        if (game.solve() and game.valid_solution()):
+        if game.solve() and game.valid_solution():
             print("Solved!")
         else:
             print("Could not solve this sudoku :(")

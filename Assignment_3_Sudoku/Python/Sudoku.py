@@ -38,7 +38,7 @@ class Sudoku:
                 for row, line in enumerate(file):
                     for col_index, char in enumerate(line):
                         if char == '\n':
-                            continue
+                            continue  
                         if int(char) == 0:
                             grid[row][col_index] = Field()
                         else:
